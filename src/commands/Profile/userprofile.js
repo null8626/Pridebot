@@ -81,7 +81,7 @@ module.exports = {
       if (profile.bio) {
         profileFields.push({
           name: "Bio",
-          value: profile.bio ? profile.bio.replace(/\\n/g, "\n") : "Not set",
+          value: profile.bio ? profile.bio.replaceAll("\\n", "\n") : "Not set",
           inline: false,
         });
       }

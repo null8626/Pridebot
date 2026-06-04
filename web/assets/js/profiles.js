@@ -54,9 +54,9 @@ async function formatBioText(text) {
   );
 
   formatted = formatted
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 
   formatted = formatted.replace(/(https?:\/\/[^\s<]+)/g, (match, url) => {
     const beforeMatch = formatted.substring(0, formatted.indexOf(match));
@@ -137,8 +137,8 @@ async function formatBioText(text) {
     '<a href="$1" target="_blank" rel="noopener noreferrer" class="bio-link">$1</a>'
   );
 
-  formatted = formatted.replace(/\\n/g, "<br>");
-  formatted = formatted.replace(/\n/g, "<br>");
+  formatted = formatted.replaceAll("\\n", "<br>");
+  formatted = formatted.replaceAll("\n", "<br>");
 
   return formatted;
 }
@@ -441,7 +441,7 @@ function updatePageMeta(profile, discordUser) {
 
   if (ogDesc) {
     const desc = profile.bio
-      ? profile.bio.substring(0, 150).replace(/\\n/g, " ") +
+      ? profile.bio.substring(0, 150).replaceAll("\\n", " ") +
         (profile.bio.length > 150 ? "..." : "")
       : `View ${name}'s profile on Pridebot`;
     ogDesc.setAttribute("content", desc);

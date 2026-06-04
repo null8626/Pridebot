@@ -179,7 +179,7 @@ module.exports = (client) => {
       const capitalizedUsername =
         username.charAt(0).toUpperCase() + username.slice(1);
 
-      htmlContent = htmlContent.replace(/{user.tag}/g, capitalizedUsername);
+      htmlContent = htmlContent.replaceAll("{user.tag}", capitalizedUsername);
       htmlContent = htmlContent.replace(
         /<meta name="og:title" content=".*" \/>/,
         `<meta name="og:title" content="${capitalizedUsername}'s Pride Avatars" />`,

@@ -458,13 +458,13 @@ module.exports = (client) => {
           /<meta name="og:description" content=".*" \/>/,
           `<meta name="og:description" content="${bio
             .substring(0, 150)
-            .replace(/\\n/g, " ")}" />`
+            .replaceAll("\\n", " ")}" />`
         );
         htmlContent = htmlContent.replace(
           /<meta name="description" content=".*" \/>/,
           `<meta name="description" content="${bio
             .substring(0, 150)
-            .replace(/\\n/g, " ")}" />`
+            .replaceAll("\\n", " ")}" />`
         );
         htmlContent = htmlContent.replace(
           /<meta name="og:image"[\s\S]*?content=".*" \/>/,

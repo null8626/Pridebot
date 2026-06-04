@@ -142,7 +142,7 @@ async function handleView(interaction, client) {
   if (profile.bio)
     fields.push({
       name: "Bio",
-      value: profile.bio.replace(/\\n/g, "\n"),
+      value: profile.bio.replaceAll("\\n", "\n"),
       inline: false,
     });
 
@@ -489,7 +489,7 @@ async function handleSetup(interaction, client) {
   if (newProfile.bio)
     fields.push({
       name: "Bio",
-      value: newProfile.bio.replace(/\\n/g, "\n"),
+      value: newProfile.bio.replaceAll("\\n", "\n"),
       inline: false,
     });
   fields.push(
