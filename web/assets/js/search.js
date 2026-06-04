@@ -87,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setLoadingState(true);
       
       // First, try direct user ID lookup (numeric)
-      if (/^\d+$/.test(query)) {
+      if (/^\d{17,20}$/.test(query)) {
         // It's a user ID, try direct access
         const response = await fetch(`/files/${query}`, {
           method: 'GET',

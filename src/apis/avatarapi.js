@@ -50,7 +50,7 @@ module.exports = (client) => {
 
     try {
       // Only try to fetch from Discord if it looks like a user ID (numeric)
-      if (/^\d+$/.test(userId)) {
+      if (/^\d{17,20}$/.test(userId)) {
         const user = await client.users.fetch(userId);
         return res.json({
           id: user.id,
@@ -201,7 +201,7 @@ module.exports = (client) => {
     }
 
     // If it looks like a user ID, try to fetch from Discord
-    if (/^\d+$/.test(identifier)) {
+    if (/^\d{17,20}$/.test(identifier)) {
       try {
         const user = await client.users.fetch(identifier);
         return serveHtmlWithUserInfo(user.username);

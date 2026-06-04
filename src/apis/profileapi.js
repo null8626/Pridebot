@@ -260,7 +260,7 @@ module.exports = (client) => {
     const { userId } = req.params;
 
     try {
-      if (/^\d+$/.test(userId)) {
+      if (/^\d{17,20}$/.test(userId)) {
         const user = await client.users.fetch(userId);
         return res.json({
           id: user.id,
@@ -347,7 +347,7 @@ module.exports = (client) => {
       const { userIdOrUsername } = req.params;
       let profile;
 
-      if (/^\d+$/.test(userIdOrUsername)) {
+      if (/^\d{17,20}$/.test(userIdOrUsername)) {
         profile = await ProfileData.findOne({ userId: userIdOrUsername });
       } else {
         profile = await ProfileData.findOne({ username: userIdOrUsername });
@@ -486,7 +486,7 @@ module.exports = (client) => {
       }
     }
 
-    if (/^\d+$/.test(searched)) {
+    if (/^\d{17,20}$/.test(searched)) {
       try {
         const user = await client.users.fetch(searched);
         return serveProfilePage(

@@ -115,7 +115,7 @@ async function formatBioText(text) {
 
   // Discord emotes <:name:id> or <a:name:id>
   formatted = formatted.replace(
-    /&lt;a?:(\w+):(\d+)&gt;/g,
+    /&lt;a?:(\w+):(\d{17,20})&gt;/g,
     '<img src="https://cdn.discordapp.com/emojis/$2.png" alt=":$1:" class="discord-emoji" title=":$1:">'
   );
 
