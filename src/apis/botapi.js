@@ -85,13 +85,41 @@ function validateWebhookAuth(authHeader, platform) {
 }
 
 async function sendEmbedToChannel(client, embed, channelId, context = "Vote") {
+  const embedData = typeof embed?.toJSON === "function" ? embed.toJSON() : embed;
+  if (client.cluster && client.cluster.ready) {
+    try {
+      const results = await client.cluster.broadcastEval(
+        async (c, { channelId, embedData }) => {
+          const channel = c.channels.cache.get(channelId);
+          if (!channel || !channel.isTextBased()) return false;
+          await channel.send({ embeds: [embedData] });
+          return true;
+        },
+        { context: { channelId, embedData } },
+      );
+
+      if (results.some(Boolean)) {
+        console.log(`[${context}] Embed sent successfully`);
+        return true;
+      }
+
+      console.error(`[${context}] Embed send failed: channel ${channelId} not accessible`);
+      return false;
+    } catch (error) {
+      console.error(`[${context}] Embed send failed:`, error.message);
+      return false;
+    }
+  }
+
   try {
-    const channel = await client.channels.fetch(channelId).catch(() => null);
+    const channel = await client.channels
+      .fetch(channelId, { allowUnknownGuild: true })
+      .catch(() => null);
     if (!channel || !channel.isTextBased()) {
       console.error(`[${context}] Embed send failed: channel ${channelId} not accessible`);
       return false;
     }
-    await channel.send({ embeds: [embed] });
+    await channel.send({ embeds: [embedData] });
     console.log(`[${context}] Embed sent successfully`);
     return true;
   } catch (error) {
@@ -943,7 +971,7 @@ module.exports = (client) => {
             "[GitHub] Cluster client not ready, attempting direct send...",
           );
           const channel = await client.channels
-            .fetch("1101742377372237906")
+            .fetch("1101742377372237906", { allowUnknownGuild: true })
             .catch(() => null);
           if (channel && channel.isTextBased()) {
             await channel.send({ embeds: [embed] });
