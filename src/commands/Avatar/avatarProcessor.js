@@ -36,29 +36,33 @@ const validFlags = [
   "abrosexual",
   "aceflux",
   "agender",
+  "agenderboy",
+  "agendergirl",
   "ally",
+  "almondsexual",
   "androgyne",
+  "aplatonic",
   "aroace",
   "aroace2",
   "aroflux",
   "aromantic",
   "asexual",
   "aurorian",
+  "bicurious",
   "bigender",
   "bisexual",
   "boyflux",
   "butch",
   "butchlesbian",
-  "butchlesbian2",
-  "butchlesbian3",
   "catgender",
   "cupioromantic",
-  "demibisexual",
+  "cupiosexual",
   "demiboy",
+  "demigender",
   "demigirl",
-  "deminonbinary",
   "demiromantic",
   "demisexual",
+  "femboy",
   "gay",
   "genderfae",
   "genderfaun",
@@ -69,22 +73,27 @@ const validFlags = [
   "graygender",
   "grayromantic",
   "graysexual",
+  "intersex",
   "lesbian",
   "lesboy",
   "lgbt",
+  "litharoace",
+  "lithosexual",
+  "lithromantic",
   "lunarian",
   "neptunic",
   "nonbinary",
+  "omnigender",
   "omnisexual",
   "pangender",
   "pansexual",
   "polyamorous",
   "polysexual",
   "queer",
+  "queer2",
   "queerplatonic",
-  "queerplatonic2",
   "sapphic",
-  "selenosexual",
+  "sapphillean",
   "singularian",
   "solarian",
   "spacialian",
@@ -92,6 +101,10 @@ const validFlags = [
   "transfeminine",
   "transgender",
   "transmasculine",
+  "trigender",
+  "unlabeled",
+  "uranic",
+  "xenogender",
 ];
 
 class AvatarProcessor {
@@ -135,8 +148,7 @@ class AvatarProcessor {
         .filter((flag) => flag !== null);
 
       console.log(
-        `Avatar Processor initialized in ${
-          Date.now() - startTime
+        `Avatar Processor initialized in ${Date.now() - startTime
         }ms - ${successCount}/${validFlags.length} flags loaded`
       );
 
@@ -320,8 +332,7 @@ class AvatarProcessor {
       // Only log slow operations in production
       if (processingTime > 1000) {
         console.log(
-          `Slow avatar generation: ${processingTime}ms for ${userID} (${flagName}${
-            flagName2 ? "+" + flagName2 : ""
+          `Slow avatar generation: ${processingTime}ms for ${userID} (${flagName}${flagName2 ? "+" + flagName2 : ""
           })`
         );
       }
@@ -358,8 +369,8 @@ class AvatarProcessor {
 
       // Save to user ID directory
       await Promise.all([
-        fs.unlink(pngPath).catch(() => {}), // Ignore error if file doesn't exist
-        fs.unlink(webpPath).catch(() => {}),
+        fs.unlink(pngPath).catch(() => { }), // Ignore error if file doesn't exist
+        fs.unlink(webpPath).catch(() => { }),
         fs.writeFile(pngPath, pngBuffer),
         fs.writeFile(webpPath, webpBuffer),
       ]);
@@ -381,8 +392,8 @@ class AvatarProcessor {
         const usernameWebpPath = `${usernameBasePath}.webp`;
 
         await Promise.all([
-          fs.unlink(usernamePngPath).catch(() => {}),
-          fs.unlink(usernameWebpPath).catch(() => {}),
+          fs.unlink(usernamePngPath).catch(() => { }),
+          fs.unlink(usernameWebpPath).catch(() => { }),
           fs.writeFile(usernamePngPath, pngBuffer),
           fs.writeFile(usernameWebpPath, webpBuffer),
         ]);
