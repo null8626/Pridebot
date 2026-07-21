@@ -3,6 +3,8 @@ const UserCommandUsage = require("../../../mongo/models/userCommandUsageSchema")
 const Blacklist = require("../../../mongo/models/blacklistSchema.js");
 const IDLists = require("../../../mongo/models/idSchema.js");
 const PanVSPot = require("../../../mongo/models/panvspotSchema.js");
+const ProfileData = require("../../../mongo/models/profileSchema.js");
+const { hasFeature, getFixedValueLimit } = require("../../utils/premiumUtils.js");
 const {
   handleModalSubmit,
   handleRemoveWebsite,
@@ -17,12 +19,38 @@ const {
   handleQuestion3Submission,
 } = require("../../commands/Profile/profilefunctions/profileSurveyHandler.js");
 const { errorlogging } = require("../../config/logging/errorlogs.js");
+const { trackLocale } = require("../../config/logging/localeTracker.js");
 const {
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
 } = require("discord.js");
+
+function timeAgo(date) {
+  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  if (seconds < 60) return `${seconds} seconds ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes !== 1 ? "s" : ""} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours !== 1 ? "s" : ""} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days !== 1 ? "s" : ""} ago`;
+}
+
+async function getOrCreateProfile(userId, username) {
+  let profile = await ProfileData.findOne({ userId });
+  if (!profile) {
+    profile = new ProfileData({ userId, username });
+    await profile.save();
+  }
+  return profile;
+}
 
 function buildPanPollEmbed(pollData) {
   return new EmbedBuilder()
@@ -199,6 +227,7 @@ module.exports = {
         }
 
         await trackUserCommandUsage(userId, commandName);
+        trackLocale(interaction.locale);
         await command.execute(interaction, client, { userId, guildId });
         if (commandName !== "feedback") {
           await checkAndShowFeedbackPrompt(interaction, userId);
@@ -211,6 +240,53 @@ module.exports = {
           `[MODAL SUBMIT] ${interaction.user.tag} - ${interaction.customId}`,
         );
         await handleModalSubmit(interaction, client);
+      } else if (
+        interaction.isStringSelectMenu() &&
+        interaction.customId === "premium_mode_select"
+      ) {
+        const selected = interaction.values[0];
+        const userId = interaction.user.id;
+        const profile = await getOrCreateProfile(userId, interaction.user.username);
+
+        if (selected === "range") {
+          const canRange = await hasFeature(userId, "darRange");
+          if (!canRange) {
+            const embed = new EmbedBuilder()
+              .setTitle("LGBTQ++ feature")
+              .setColor(0xff66cc)
+              .setDescription("Custom range mode requires the **Pridebot LGBTQ++** tier.\n\n[**View premium plans**](https://pridebot.xyz/premium)");
+            return await interaction.reply({ embeds: [embed], ephemeral: true });
+          }
+        }
+
+        if (selected === "fixed") {
+          const canFixed = await hasFeature(userId, "darFixedValue");
+          if (!canFixed) {
+            const embed = new EmbedBuilder()
+              .setTitle("Supporter feature")
+              .setColor(0xff66cc)
+              .setDescription("Fixed value mode requires the **Pridebot Supporter** tier or above.\n\n[**View premium plans**](https://pridebot.xyz/premium)");
+            return await interaction.reply({ embeds: [embed], ephemeral: true });
+          }
+          const fixedValuesMap = profile.darFixedValues || new Map();
+          const setCount = [...fixedValuesMap.values()].filter(v => v !== null && v !== undefined).length;
+          if (setCount === 0) {
+            const embed = new EmbedBuilder()
+              .setColor(0xff66cc)
+              .setDescription("Set a fixed value first using the **Set dar value** button, then switch to this mode.");
+            return await interaction.reply({ embeds: [embed], ephemeral: true });
+          }
+        }
+
+        profile.darMode = selected;
+        await profile.save();
+
+        const modeNames = { rng: "🎲 Random", range: "📊 Custom range", fixed: "🔒 Fixed value" };
+        const embed = new EmbedBuilder()
+          .setTitle("Dar mode updated")
+          .setColor(0xff66cc)
+          .setDescription(`Your dar mode is now **${modeNames[selected]}**.`);
+        await interaction.reply({ embeds: [embed], ephemeral: true });
       } else if (
         interaction.isStringSelectMenu() &&
         interaction.customId === "removeWebsiteSelect"
@@ -285,6 +361,234 @@ module.exports = {
           `[ALTER PROFILE] ${interaction.user.tag} - Back to profile`,
         );
         await handleBackToProfileButton(interaction, client);
+      } else if (
+        interaction.isButton() &&
+        interaction.customId === "premium_set_range"
+      ) {
+        const profile = await getOrCreateProfile(interaction.user.id, interaction.user.username);
+        const tier = profile.premiumTier;
+
+        const minPlaceholder = tier === "lgbtqpp" ? "Min -500, default 0" : "Fixed at 0";
+        const maxPlaceholder = tier === "lgbtqpp" ? "Max 500, default 100" : "Fixed at 100";
+
+        const modal = new ModalBuilder()
+          .setCustomId("premium_range_modal")
+          .setTitle("Set your dar range");
+
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId("range_min")
+              .setLabel("Lowest result")
+              .setStyle(TextInputStyle.Short)
+              .setPlaceholder(minPlaceholder)
+              .setValue(String(profile.darRangeMin))
+          ),
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId("range_max")
+              .setLabel("Highest result")
+              .setStyle(TextInputStyle.Short)
+              .setPlaceholder(maxPlaceholder)
+              .setValue(String(profile.darRangeMax))
+          )
+        );
+
+        await interaction.showModal(modal);
+      } else if (
+        interaction.isModalSubmit() &&
+        interaction.customId === "premium_range_modal"
+      ) {
+        const minStr = interaction.fields.getTextInputValue("range_min");
+        const maxStr = interaction.fields.getTextInputValue("range_max");
+        const min = parseInt(minStr, 10);
+        const max = parseInt(maxStr, 10);
+
+        if (isNaN(min) || isNaN(max)) {
+          const embed = new EmbedBuilder()
+            .setColor(0xff66cc)
+            .setDescription("Please enter valid whole numbers for both fields.");
+          return await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+
+        const profile = await getOrCreateProfile(interaction.user.id, interaction.user.username);
+        const tier = profile.premiumTier;
+
+        if (tier !== "lgbtqpp") {
+          const embed = new EmbedBuilder()
+            .setTitle("Range locked")
+            .setColor(0xff66cc)
+            .setDescription("Custom dar ranges require the **Pridebot LGBTQ++** tier.\n\n[**View premium plans**](https://pridebot.xyz/premium)");
+          return await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+
+        if (min < -500 || max > 500 || min >= max) {
+          const embed = new EmbedBuilder()
+            .setColor(0xff66cc)
+            .setDescription("Invalid range. Min must be ≥ -500, max must be ≤ 500, and min must be less than max.");
+          return await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+
+        profile.darRangeMin = min;
+        profile.darRangeMax = max;
+        await profile.save();
+
+        const embed = new EmbedBuilder()
+          .setTitle("Dar range updated")
+          .setColor(0xff66cc)
+          .setDescription(`Your dar range is now **${min} to ${max}**.`);
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+      } else if (
+        interaction.isButton() &&
+        interaction.customId === "premium_set_value"
+      ) {
+        const profile = await getOrCreateProfile(interaction.user.id, interaction.user.username);
+        const tier = profile.premiumTier;
+        const limit = getFixedValueLimit(tier);
+        const fixedValuesMap = profile.darFixedValues || new Map();
+        const setCount = [...fixedValuesMap.values()].filter(v => v !== null && v !== undefined).length;
+
+        const DAR_COMMANDS = ["gaydar", "transdar", "lesdar", "bidar", "rizzdar", "queerdar"];
+        const options = DAR_COMMANDS.map(cmd => {
+          const current = fixedValuesMap.get(cmd);
+          const hasVal = current !== null && current !== undefined;
+          return new StringSelectMenuOptionBuilder()
+            .setLabel(cmd.charAt(0).toUpperCase() + cmd.slice(1))
+            .setDescription(hasVal ? `Currently: ${current}% — select to edit or clear` : "Not set")
+            .setValue(cmd);
+        });
+
+        const selectMenu = new StringSelectMenuBuilder()
+          .setCustomId("premium_value_command_select")
+          .setPlaceholder(`Select a dar command (${setCount}/${limit} slots used)`)
+          .addOptions(options);
+
+        await interaction.reply({
+          embeds: [new EmbedBuilder().setColor(0xff66cc).setDescription(`**Set a fixed dar value**\nChoose which dar command to configure. Leave the value blank to clear it.\nSlots: **${setCount}/${limit}** used.`)],
+          components: [new ActionRowBuilder().addComponents(selectMenu)],
+          ephemeral: true,
+        });
+      } else if (
+        interaction.isStringSelectMenu() &&
+        interaction.customId === "premium_value_command_select"
+      ) {
+        const commandName = interaction.values[0];
+        const profile = await getOrCreateProfile(interaction.user.id, interaction.user.username);
+        const tier = profile.premiumTier;
+        const limit = getFixedValueLimit(tier);
+        const fixedValuesMap = profile.darFixedValues || new Map();
+        const currentVal = fixedValuesMap.get(commandName);
+        const hasCurrentVal = currentVal !== null && currentVal !== undefined;
+        const setCount = [...fixedValuesMap.values()].filter(v => v !== null && v !== undefined).length;
+
+        if (!hasCurrentVal && setCount >= limit) {
+          const embed = new EmbedBuilder()
+            .setColor(0xff66cc)
+            .setDescription(`You've used all **${limit}** fixed value slot${limit !== 1 ? "s" : ""} for your tier. Clear an existing one first.`);
+          return await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+
+        const maxVal = tier === "lgbtqpp" ? 500 : 100;
+        const minVal = tier === "lgbtqpp" ? -500 : 0;
+        const label = commandName.charAt(0).toUpperCase() + commandName.slice(1);
+
+        const modal = new ModalBuilder()
+          .setCustomId(`premium_value_modal:${commandName}`)
+          .setTitle(`Set fixed value — ${label}`);
+
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId("fixed_value")
+              .setLabel(`Fixed result (${minVal} to ${maxVal}), blank to clear`)
+              .setStyle(TextInputStyle.Short)
+              .setValue(hasCurrentVal ? String(currentVal) : "")
+              .setRequired(false)
+          )
+        );
+
+        await interaction.showModal(modal);
+      } else if (
+        interaction.isModalSubmit() &&
+        interaction.customId.startsWith("premium_value_modal:")
+      ) {
+        const commandName = interaction.customId.split(":")[1];
+        const raw = interaction.fields.getTextInputValue("fixed_value").trim();
+        const profile = await getOrCreateProfile(interaction.user.id, interaction.user.username);
+        const tier = profile.premiumTier;
+
+        const canUse = await hasFeature(interaction.user.id, "darFixedValue");
+        if (!canUse) {
+          const embed = new EmbedBuilder()
+            .setTitle("Premium feature")
+            .setColor(0xff66cc)
+            .setDescription("Fixed dar values require the **Pridebot Supporter** tier or above.\n\n[**View premium plans**](https://pridebot.xyz/premium)");
+          return await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+
+        const label = commandName.charAt(0).toUpperCase() + commandName.slice(1);
+
+        if (raw === "") {
+          profile.darFixedValues.delete(commandName);
+          profile.markModified("darFixedValues");
+          await profile.save();
+          const embed = new EmbedBuilder()
+            .setTitle("Dar value cleared")
+            .setColor(0xff66cc)
+            .setDescription(`Fixed value for **${label}** has been cleared.`);
+          return await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+
+        const val = parseInt(raw, 10);
+        if (isNaN(val)) {
+          const embed = new EmbedBuilder()
+            .setColor(0xff66cc)
+            .setDescription("Please enter a valid whole number, or leave blank to clear.");
+          return await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+
+        const maxVal = tier === "lgbtqpp" ? 500 : 100;
+        const minVal = tier === "lgbtqpp" ? -500 : 0;
+        if (val < minVal || val > maxVal) {
+          const embed = new EmbedBuilder()
+            .setColor(0xff66cc)
+            .setDescription(`Value must be between **${minVal}** and **${maxVal}** for your tier.`);
+          return await interaction.reply({ embeds: [embed], ephemeral: true });
+        }
+
+        profile.darFixedValues.set(commandName, val);
+        profile.markModified("darFixedValues");
+        await profile.save();
+
+        const embed = new EmbedBuilder()
+          .setTitle("Dar value set")
+          .setColor(0xff66cc)
+          .setDescription(`**${label}** will now always return **${val}%** when in fixed mode.\nLeave the field blank to clear it.`);
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+      } else if (
+        interaction.isButton() &&
+        interaction.customId === "premium_view_history"
+      ) {
+        const profile = await getOrCreateProfile(interaction.user.id, interaction.user.username);
+        const history = (profile.darHistory || []).slice(-10).reverse();
+
+        if (history.length === 0) {
+          return await interaction.reply({
+            content: "No dar history recorded yet. Use any dar command to start tracking.",
+            ephemeral: true,
+          });
+        }
+
+        const lines = history.map(
+          (entry) => `**${entry.command}** — ${entry.result}% — ${timeAgo(entry.timestamp)}`
+        );
+
+        const embed = new EmbedBuilder()
+          .setTitle("Your Dar History")
+          .setColor(0xff66cc)
+          .setDescription(lines.join("\n"));
+
+        await interaction.reply({ embeds: [embed], ephemeral: true });
       } else if (
         interaction.isButton() &&
         interaction.customId.startsWith("pan_poll_")

@@ -5,7 +5,6 @@ const supportedLanguages = [
   "id", // Indonesian
   "da", // Danish
   "de", // German
-  "en-GB", // English (UK)
   "en-US", // English (US)
   "es-ES", // Spanish (Spain)
   "es-419", // Spanish (Latin America)
@@ -36,48 +35,32 @@ const supportedLanguages = [
   "ko", // Korean
 ];
 
-function loadTranslations(language, category, commandName) {
-  let categories = category;
-  if (category === "Pride") {
-    categories = "PrideTranslations";
-  } else if (category === "Terms") {
-    categories = "TermsTranslations";
+function getCategoryFolder(category) {
+  switch (category) {
+    case "Pride": return "PrideTranslations";
+    case "Terms": return "TermsTranslations";
+    case "Fun": return "FunTranslations";
+    case "Support": return "SupportTranslations";
+    default: return category;
   }
-  const lang = supportedLanguages.includes(language) ? language : "en-US";
-  const defaultPath = path.join(
-    __dirname,
-    "..",
-    "..",
-    "translations",
-    categories,
-    commandName,
-    "en-US.json"
-  );
-  const filePath = path.join(
-    __dirname,
-    "..",
-    "..",
-    "translations",
-    categories,
-    commandName,
-    `${lang}.json`
-  );
+}
+
+function loadTranslations(language, category, commandName) {
+  const folder = getCategoryFolder(category);
+  const normalized = language === "en-GB" ? "en-US" : language;
+  const lang = supportedLanguages.includes(normalized) ? normalized : "en-US";
+  const base = path.join(__dirname, "..", "..", "translations", folder, commandName);
+  const filePath = path.join(base, `${lang}.json`);
+  const defaultPath = path.join(base, "en-US.json");
 
   try {
     if (fs.existsSync(filePath)) {
-      const translations = JSON.parse(fs.readFileSync(filePath, "utf8"));
-      return translations;
-    } else {
-      console.warn(
-        `Warning: Translation file for '${language}' not found for command '${commandName}'. Using default language.`
-      );
-      return JSON.parse(fs.readFileSync(defaultPath, "utf8"));
+      return JSON.parse(fs.readFileSync(filePath, "utf8"));
     }
+    console.warn(`Translation file for '${language}' not found for '${commandName}'. Falling back to en-US.`);
+    return JSON.parse(fs.readFileSync(defaultPath, "utf8"));
   } catch (error) {
-    console.error(
-      `Error loading translations for ${language} for command '${commandName}':`,
-      error
-    );
+    console.error(`Error loading translations for '${commandName}' (${language}):`, error);
     return JSON.parse(fs.readFileSync(defaultPath, "utf8"));
   }
 }

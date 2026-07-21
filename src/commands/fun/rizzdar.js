@@ -2,6 +2,8 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const commandLogging = require("../../config/logging/commandlog");
 const darlogging = require("../../config/logging/darlog");
 const DarList = require("../../../mongo/models/idDarSchema");
+const loadTranslations = require("../../config/commandfunctions/translation");
+const { getDarResult, applyDarRange, addDarHistory } = require("../../utils/premiumUtils");
 
 const utility_functions = {
   chance: function (probability) {
@@ -24,59 +26,69 @@ module.exports = {
     ),
 
   async execute(interaction, client) {
-    await interaction.deferReply(); 
+    await interaction.deferReply();
 
+    const t = loadTranslations(interaction.locale, "Fun", "rizzdar");
     const targetUser =
       interaction.options.getUser("target") || interaction.user;
     const userName = targetUser.username;
     const userid = targetUser.id;
 
+    const { min, max, fixed, useDarList } = await getDarResult(userid, "rizzdar");
+
     let meter;
     try {
-      const darList = await DarList.findOne();
-
-      if (darList) {
-        const rizzdarEntry = darList.rizzdar?.find(
-          (entry) => entry.userid === userid
-        );
-
-        if (rizzdarEntry) {
-          meter = rizzdarEntry.meter;
-        } else {
-          meter = Math.floor(Math.random() * 101);
-          if (utility_functions.chance(0.0001)) {
-            meter = Math.floor(Math.random() * 2354082) + 500;
-            if (utility_functions.chance(0.5)) {
-              meter *= -1;
-            }
-          }
+      if (!useDarList) {
+        meter = applyDarRange(min, max);
+        if (!fixed && utility_functions.chance(0.0001)) {
+          meter = Math.floor(Math.random() * 2354082) + 500;
+          if (utility_functions.chance(0.5)) meter *= -1;
         }
       } else {
-        meter = Math.floor(Math.random() * 101);
+        let darList = await DarList.findOne();
 
-        if (utility_functions.chance(0.0001)) {
-          meter = Math.floor(Math.random() * 2354082) + 500;
-          if (utility_functions.chance(0.5)) {
-            meter *= -1;
+        if (darList) {
+          const rizzdarEntry = darList.rizzdar?.find(
+            (entry) => entry.userid === userid
+          );
+
+          if (rizzdarEntry) {
+            meter = rizzdarEntry.meter;
+          } else {
+            meter = applyDarRange(min, max);
+            if (utility_functions.chance(0.0001)) {
+              meter = Math.floor(Math.random() * 2354082) + 500;
+              if (utility_functions.chance(0.5)) meter *= -1;
+            }
+            darList.rizzdar.push({ userid, meter });
+            await darList.save();
           }
+        } else {
+          meter = applyDarRange(min, max);
+          if (utility_functions.chance(0.0001)) {
+            meter = Math.floor(Math.random() * 2354082) + 500;
+            if (utility_functions.chance(0.5)) meter *= -1;
+          }
+          darList = new DarList({ rizzdar: [{ userid, meter }] });
+          await darList.save();
         }
       }
     } catch (err) {
       console.error(err);
-      meter = Math.floor(Math.random() * 101); 
+      meter = applyDarRange(min, max);
     }
 
+    await addDarHistory(interaction.user.id, "rizzdar", meter);
+
     const embed = new EmbedBuilder()
-      .setTitle(`How much rizz does ${userName} have?`)
+      .setTitle(t.title.replace("{{username}}", userName))
       .setDescription(
-        `<@${userid}> has **${utility_functions.number_format_commas(
-          meter
-        )}% rizz!**`
+        t.description
+          .replace("{{mention}}", `<@${userid}>`)
+          .replace("{{meter}}", utility_functions.number_format_commas(meter))
       )
       .setColor(0xff69b4)
-      .setFooter({
-        text: "The bot has 99.99% accuracy rate on checking users rizz",
-      });
+      .setFooter({ text: t.footer });
 
     try {
       await interaction.editReply({ embeds: [embed] }); // Edit the deferred reply

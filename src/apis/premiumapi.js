@@ -33,6 +33,11 @@ module.exports = (client) => {
     24609755: "Pridebot LGBTQ++",
   };
 
+  const tierSlugs = {
+    22606797: "supporter",
+    24609755: "lgbtqpp",
+  };
+
   function verifyPatreonSignature(payload, signature) {
     if (!process.env.PateronWebhookSecret) {
       console.warn("PATREON_WEBHOOK_SECRET not set, skipping verification");
@@ -77,6 +82,29 @@ module.exports = (client) => {
     }
   });
 
+  async function fetchDiscordIdFromPatreon(memberId) {
+    const token = process.env.PATREON_CREATOR_ACCESS_TOKEN;
+    if (!token || !memberId) return null;
+    try {
+      const url = `https://www.patreon.com/api/oauth2/v2/members/${memberId}?include=user&fields%5Buser%5D=social_connections,full_name`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        console.warn(`[PATREON] API fetch failed: ${res.status}`);
+        return null;
+      }
+      const json = await res.json();
+      const user = json.included?.find((i) => i.type === "user");
+      const id = user?.attributes?.social_connections?.discord?.user_id || null;
+      if (id) console.log(`[PATREON] Fetched Discord ID ${id} via API for member ${memberId}`);
+      return id;
+    } catch (err) {
+      console.error("[PATREON] fetchDiscordIdFromPatreon error:", err);
+      return null;
+    }
+  }
+
   async function handlePledgeCreate(client, payload) {
     try {
       const data = payload.data;
@@ -97,8 +125,9 @@ module.exports = (client) => {
         patron?.attributes?.vanity ||
         "Unknown Patron";
 
-      const discordId =
+      let discordId =
         patron?.attributes?.social_connections?.discord?.user_id || null;
+      if (!discordId) discordId = await fetchDiscordIdFromPatreon(data.id);
 
       const tier = included.find(
         (item) => item.type === "tier" && item.id === tierId
@@ -112,6 +141,7 @@ module.exports = (client) => {
           let profile = await ProfileData.findOne({ userId: discordId });
           if (profile) {
             profile.premiumMember = true;
+            profile.premiumTier = tierSlugs[tierId] || null;
             if (!profile.premiumSince) {
               profile.premiumSince = new Date();
             }
@@ -124,6 +154,7 @@ module.exports = (client) => {
               username: patronName,
               premiumMember: true,
               premiumSince: new Date(),
+              premiumTier: tierSlugs[tierId] || null,
             });
             await profile.save();
             console.log(
@@ -136,9 +167,12 @@ module.exports = (client) => {
           if (idList) {
             if (!idList.donor.includes(discordId)) {
               idList.donor.push(discordId);
-              await idList.save();
-              console.log(`Added ${discordId} to donor list`);
             }
+            if (tierSlugs[tierId] === "lgbtqpp" && !idList.donorplus.includes(discordId)) {
+              idList.donorplus.push(discordId);
+            }
+            await idList.save();
+            console.log(`Added ${discordId} to donor list`);
           }
         } catch (dbError) {
           console.error("Error updating profile:", dbError);
@@ -235,8 +269,9 @@ module.exports = (client) => {
         (item) => item.type === "user" && item.id === patronId
       );
       const patronName = patron?.attributes?.full_name || "Unknown Patron";
-      const discordId =
-        patron?.attributes?.social_connections?.discord?.user_id;
+      let discordId =
+        patron?.attributes?.social_connections?.discord?.user_id || null;
+      if (!discordId) discordId = await fetchDiscordIdFromPatreon(data.id);
 
       const tier = included.find(
         (item) => item.type === "tier" && item.id === tierId
@@ -249,7 +284,18 @@ module.exports = (client) => {
           const profile = await ProfileData.findOne({ userId: discordId });
           if (profile) {
             const isActive = pledgeCents > 0;
+            const newTier = isActive ? (tierSlugs[tierId] || null) : null;
+
+            const wasLgbtqpp = profile.premiumTier === "lgbtqpp";
+
+            // If downgrading from lgbtqpp to a lower tier, reset the custom range
+            if (wasLgbtqpp && newTier !== "lgbtqpp") {
+              profile.darRangeMin = 0;
+              profile.darRangeMax = 100;
+            }
+
             profile.premiumMember = isActive;
+            profile.premiumTier = newTier;
             if (isActive && !profile.premiumSince) {
               profile.premiumSince = new Date();
             }
@@ -264,13 +310,17 @@ module.exports = (client) => {
             if (idList) {
               if (isActive && !idList.donor.includes(discordId)) {
                 idList.donor.push(discordId);
-                await idList.save();
-                console.log(`Added ${discordId} to donor list`);
-              } else if (!isActive && idList.donor.includes(discordId)) {
+              } else if (!isActive) {
                 idList.donor = idList.donor.filter((id) => id !== discordId);
-                await idList.save();
-                console.log(`Removed ${discordId} from donor list`);
               }
+
+              if (newTier === "lgbtqpp" && !idList.donorplus.includes(discordId)) {
+                idList.donorplus.push(discordId);
+              } else if (newTier !== "lgbtqpp") {
+                idList.donorplus = idList.donorplus.filter((id) => id !== discordId);
+              }
+
+              await idList.save();
             }
           } else {
             console.log(
@@ -321,14 +371,20 @@ module.exports = (client) => {
         (item) => item.type === "user" && item.id === patronId
       );
       const patronName = patron?.attributes?.full_name || "Unknown Patron";
-      const discordId =
-        patron?.attributes?.social_connections?.discord?.user_id;
+      let discordId =
+        patron?.attributes?.social_connections?.discord?.user_id || null;
+      if (!discordId) discordId = await fetchDiscordIdFromPatreon(data.id);
 
       if (discordId) {
         try {
           const profile = await ProfileData.findOne({ userId: discordId });
           if (profile) {
+            if (profile.premiumTier === "lgbtqpp") {
+              profile.darRangeMin = 0;
+              profile.darRangeMax = 100;
+            }
             profile.premiumMember = false;
+            profile.premiumTier = null;
             await profile.save();
             console.log(
               `Pledge cancelled: Premium removed for user ${discordId} (${patronName})`
@@ -340,10 +396,11 @@ module.exports = (client) => {
           }
 
           const idList = await IDLists.findOne();
-          if (idList && idList.donor.includes(discordId)) {
+          if (idList) {
             idList.donor = idList.donor.filter((id) => id !== discordId);
+            idList.donorplus = idList.donorplus.filter((id) => id !== discordId);
             await idList.save();
-            console.log(`Removed ${discordId} from donor list`);
+            console.log(`Removed ${discordId} from donor/donorplus lists`);
           }
         } catch (dbError) {
           console.error(

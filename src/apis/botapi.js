@@ -85,46 +85,47 @@ function validateWebhookAuth(authHeader, platform) {
 }
 
 async function sendEmbedToChannel(client, embed, channelId, context = "Vote") {
-  if (!client.cluster || !client.cluster.ready) {
-    console.warn(
-      `[${context}] Cluster client not ready, attempting direct send...`,
-    );
-    const channel = await client.channels.fetch(channelId).catch(() => null);
-    if (
-      channel &&
-      (channel.type === ChannelType.GuildText || channel.isTextBased())
-    ) {
-      await channel.send({ embeds: [embed] });
-      console.log(`[${context}] Embed sent directly (no clustering)`);
-      return true;
+  const embedData = typeof embed?.toJSON === "function" ? embed.toJSON() : embed;
+  if (client.cluster && client.cluster.ready) {
+    try {
+      const results = await client.cluster.broadcastEval(
+        async (c, { channelId, embedData }) => {
+          const channel = c.channels.cache.get(channelId);
+          if (!channel || !channel.isTextBased()) return false;
+          await channel.send({ embeds: [embedData] });
+          return true;
+        },
+        { context: { channelId, embedData } },
+      );
+
+      if (results.some(Boolean)) {
+        console.log(`[${context}] Embed sent successfully`);
+        return true;
+      }
+
+      console.error(`[${context}] Embed send failed: channel ${channelId} not accessible`);
+      return false;
+    } catch (error) {
+      console.error(`[${context}] Embed send failed:`, error.message);
+      return false;
     }
-    console.error(`[${context}] Failed to send embed: channel not accessible`);
-    return false;
   }
 
-  const results = await client.cluster.broadcastEval(
-    async (c, { channelId, embedJSON }) => {
-      const { EmbedBuilder, ChannelType } = require("discord.js");
-      const channel = await c.channels.fetch(channelId).catch(() => null);
-      if (
-        !channel ||
-        (channel.type !== ChannelType.GuildText && !channel.isTextBased())
-      )
-        return null;
-      const embed = new EmbedBuilder(embedJSON);
-      await channel.send({ embeds: [embed] });
-      return c.cluster?.id ?? true;
-    },
-    { context: { channelId, embedJSON: embed.toJSON() } },
-  );
-
-  const success = results.find((r) => r !== null);
-  if (!success) {
-    console.error(`[${context}] Embed send failed: no cluster had access.`);
+  try {
+    const channel = await client.channels
+      .fetch(channelId, { allowUnknownGuild: true })
+      .catch(() => null);
+    if (!channel || !channel.isTextBased()) {
+      console.error(`[${context}] Embed send failed: channel ${channelId} not accessible`);
+      return false;
+    }
+    await channel.send({ embeds: [embedData] });
+    console.log(`[${context}] Embed sent successfully`);
+    return true;
+  } catch (error) {
+    console.error(`[${context}] Embed send failed:`, error.message);
     return false;
   }
-  console.log(`[${context}] Embed sent successfully by cluster:`, success);
-  return true;
 }
 
 async function sendVoteEmbed(client, embed, platform, userId, res) {
@@ -970,7 +971,7 @@ module.exports = (client) => {
             "[GitHub] Cluster client not ready, attempting direct send...",
           );
           const channel = await client.channels
-            .fetch("1101742377372237906")
+            .fetch("1101742377372237906", { allowUnknownGuild: true })
             .catch(() => null);
           if (channel && channel.isTextBased()) {
             await channel.send({ embeds: [embed] });
