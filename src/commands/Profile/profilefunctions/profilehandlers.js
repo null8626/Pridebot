@@ -11,7 +11,6 @@ const {
 const commandLogging = require("../../../config/logging/commandlog");
 const profileLogging = require("../../../config/logging/profilelogging");
 const chalk = require("chalk");
-const axios = require("axios");
 const path = require("path");
 const fs = require("fs");
 const config = require("../../../environment");
@@ -234,12 +233,12 @@ async function handlePremium(interaction, client) {
 
   if (attachment) {
     try {
-      const response = await axios.get(attachment.url, { responseType: "arraybuffer" });
+      const response = await fetch(attachment.url);
       const ext = path.extname(attachment.name || ".png").split("?")[0] || ".png";
       const filename = `${userId}${ext}`;
       const pfpDir = path.join(__dirname, "..", "..", "..", "profilepfps");
       if (!fs.existsSync(pfpDir)) fs.mkdirSync(pfpDir, { recursive: true });
-      fs.writeFileSync(path.join(pfpDir, filename), response.data);
+      fs.writeFileSync(path.join(pfpDir, filename), await response.arrayBuffer());
       updates.pfp = `${config.links.profile}/pfps/${filename}?t=${Date.now()}`;
       messages.push("Profile picture updated.");
     } catch (err) {

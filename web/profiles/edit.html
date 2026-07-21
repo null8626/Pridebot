@@ -657,16 +657,16 @@
 
         if (profile.sexuality) {
           const sexualityText = profile.sexuality === 'other' ? profile.otherSexuality : profile.sexuality;
-          document.getElementById('profile-sexuality').textContent = sexualityText.charAt(0).toUpperCase() + sexualityText.slice(1);
+          document.getElementById('profile-sexuality').textContent = sexualityText[0].toUpperCase() + sexualityText.slice(1);
         }
 
         if (profile.romanticOrientation) {
-          document.getElementById('profile-romantic').textContent = profile.romanticOrientation.charAt(0).toUpperCase() + profile.romanticOrientation.slice(1);
+          document.getElementById('profile-romantic').textContent = profile.romanticOrientation[0].toUpperCase() + profile.romanticOrientation.slice(1);
         }
 
         if (profile.gender) {
           const genderText = profile.gender === 'other' ? profile.otherGender : profile.gender;
-          document.getElementById('profile-gender').textContent = genderText.charAt(0).toUpperCase() + genderText.slice(1);
+          document.getElementById('profile-gender').textContent = genderText[0].toUpperCase() + genderText.slice(1);
         }
 
         if (profile.color) {
@@ -686,7 +686,7 @@
         const modal = document.getElementById('editModal');
         const modalBody = document.getElementById('modal-body');
         
-        let fieldTitle = field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1');
+        let fieldTitle = field[0].toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1');
         document.getElementById('modal-title').textContent = `Edit ${fieldTitle}`;
         
         let html = '';
@@ -821,7 +821,7 @@
         const updates = { [currentEditField]: value };
         
         if (otherInput && input.value === 'Other') {
-          const otherField = `other${currentEditField.charAt(0).toUpperCase()}${currentEditField.slice(1)}`;
+          const otherField = `other${currentEditField[0].toUpperCase()}${currentEditField.slice(1)}`;
           updates[otherField] = otherInput.value;
         }
         

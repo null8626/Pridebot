@@ -1,10 +1,9 @@
-const axios = require("axios");
 require("dotenv").config();
 const { token } = process.env;
 
 async function getApplicationStats(client) {
   try {
-    const response = await axios.get(
+    const response = await fetch(
       `https://discord.com/api/v10/applications/1101256478632972369`,
       {
         headers: {
@@ -12,7 +11,7 @@ async function getApplicationStats(client) {
         },
       }
     );
-    return response.data;
+    return await response.json();
   } catch (error) {
     console.error("Error fetching application stats:");
     return null;
