@@ -177,7 +177,7 @@ module.exports = (client) => {
       let htmlContent = fs.readFileSync(htmlFilePath, "utf8");
 
       const capitalizedUsername =
-        username.charAt(0).toUpperCase() + username.slice(1);
+        username[0].toUpperCase() + username.slice(1);
 
       htmlContent = htmlContent.replaceAll("{user.tag}", capitalizedUsername);
       htmlContent = htmlContent.replace(

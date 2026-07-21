@@ -453,7 +453,7 @@ module.exports = {
           const current = fixedValuesMap.get(cmd);
           const hasVal = current !== null && current !== undefined;
           return new StringSelectMenuOptionBuilder()
-            .setLabel(cmd.charAt(0).toUpperCase() + cmd.slice(1))
+            .setLabel(cmd[0].toUpperCase() + cmd.slice(1))
             .setDescription(hasVal ? `Currently: ${current}% — select to edit or clear` : "Not set")
             .setValue(cmd);
         });
@@ -490,7 +490,7 @@ module.exports = {
 
         const maxVal = tier === "lgbtqpp" ? 500 : 100;
         const minVal = tier === "lgbtqpp" ? -500 : 0;
-        const label = commandName.charAt(0).toUpperCase() + commandName.slice(1);
+        const label = commandName[0].toUpperCase() + commandName.slice(1);
 
         const modal = new ModalBuilder()
           .setCustomId(`premium_value_modal:${commandName}`)
@@ -526,7 +526,7 @@ module.exports = {
           return await interaction.reply({ embeds: [embed], ephemeral: true });
         }
 
-        const label = commandName.charAt(0).toUpperCase() + commandName.slice(1);
+        const label = commandName[0].toUpperCase() + commandName.slice(1);
 
         if (raw === "") {
           profile.darFixedValues.delete(commandName);
