@@ -34,11 +34,7 @@ module.exports = {
       const idLists = await IDLists.findOne();
       let badgeStr = "";
       if (profile && profile.badgesVisible && idLists) {
-        for (const [key, value] of Object.entries(badgeMap)) {
-          if (idLists[key] && idLists[key].includes(targetUser.id)) {
-            badgeStr += value;
-          }
-        }
+        badgeStr = Object.entries(badgeMap).reduce((acc, [key, value]) => acc + (idLists[key] && idLists[key].includes(targetUser.id) ? value : ""), "");
       }
 
       const pronounsValue = profile.pronouns || "Not set";

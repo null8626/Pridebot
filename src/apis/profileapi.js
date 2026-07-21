@@ -288,7 +288,6 @@ module.exports = (client) => {
         return res.json({ badges: [] });
       }
 
-      const badges = [];
       const badgeKeys = [
         "bot",
         "discord",
@@ -299,12 +298,7 @@ module.exports = (client) => {
         "partner",
         "donor",
       ];
-
-      for (const key of badgeKeys) {
-        if (Array.isArray(idLists[key]) && idLists[key].includes(userId)) {
-          badges.push(key);
-        }
-      }
+      const badges = badgeKeys.filter(key => Array.isArray(idLists[key]) && idLists[key].includes(userId));
 
       return res.json({ badges });
     } catch (error) {

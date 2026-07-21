@@ -111,12 +111,9 @@ async function handleView(interaction, client) {
   }
 
   let badgeStr = "";
+
   if (profile.badgesVisible && idLists) {
-    for (const [key, emoji] of Object.entries(badgeMap)) {
-      if (Array.isArray(idLists[key]) && idLists[key].includes(userId)) {
-        badgeStr += emoji;
-      }
-    }
+    badgeStr = Object.entries(badgeMap).reduce((acc, [key, emoji]) => acc + (Array.isArray(idLists[key]) && idLists[key].includes(userId) ? emoji : ""), "");
   }
 
   const fields = [];

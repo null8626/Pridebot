@@ -482,8 +482,7 @@ module.exports = (client) => {
 
   function buildCategoryMap(typeDir) {
     const categories = {};
-    for (const entry of fs.readdirSync(typeDir)) {
-      if (isExcluded(entry)) continue;
+    for (const entry of fs.readdirSync(typeDir).filter(entry => !isExcluded(entry))) {
       const entryPath = path.join(typeDir, entry);
       if (fs.statSync(entryPath).isDirectory()) {
         const commands = listCommandFiles(entryPath);
