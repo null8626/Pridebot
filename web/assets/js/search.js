@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Check for suspicious characters
-    if (!/^[a-zA-Z0-9_.-]+$/.test(query)) {
+    if (!/^[\w.-]+$/.test(query)) {
       showError("Invalid characters detected", "Only letters, numbers, underscores, periods, and hyphens are allowed");
       return false;
     }
