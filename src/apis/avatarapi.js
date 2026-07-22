@@ -93,7 +93,7 @@ module.exports = (client) => {
         cluster: getInfo().CLUSTER,
         cache: stats,
       });
-    } catch (error) {
+    } catch {
       res.status(500).json({ error: "Cache stats unavailable" });
     }
   });
@@ -152,7 +152,7 @@ module.exports = (client) => {
           });
         }
       }
-    } catch (error) {
+    } catch {
       // Directory doesn't exist or access denied
     }
 
@@ -261,7 +261,7 @@ module.exports = (client) => {
         stats = await fsPromises.stat(testPath);
         imagePath = testPath;
         break; // Found the file, stop searching
-      } catch (error) {
+      } catch {
         // File doesn't exist with this identifier, try next
         continue;
       }

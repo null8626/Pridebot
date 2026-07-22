@@ -10,7 +10,6 @@ const {
 } = require("discord.js");
 const commandLogging = require("../../../config/logging/commandlog");
 const profileLogging = require("../../../config/logging/profilelogging");
-const chalk = require("chalk");
 const path = require("path");
 const fs = require("fs");
 const config = require("../../../environment");
@@ -209,7 +208,7 @@ async function handleView(interaction, client) {
   }
 }
 
-async function handlePremium(interaction, client) {
+async function handlePremium(interaction) {
   const userId = interaction.user.id;
   const action = interaction.options.getString("website");
   const premiumToggle = interaction.options.getBoolean("premiumtoggle");

@@ -2,15 +2,7 @@ function capitalizeFirstLetter(string) {
   return string[0].toUpperCase() + string.slice(1);
 }
 
-function formatFileSize(bytes) {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-}
-
-function createAvatarCard(file, imagePathBase, currentFormat) {
+function createAvatarCard(file, imagePathBase) {
   const flagName = file.replace(/\.(png|webp)$/i, "");
   const fileExtension = file.match(/\.(png|webp)$/i)?.[1] || "png";
 
@@ -249,7 +241,7 @@ Timestamp: ${new Date().toISOString()}
               responsePreview = text.length > 200 ? text.substring(0, 200) + '...' : text;
             }
           } catch (e) {
-            responsePreview = 'Unable to read response body';
+            responsePreview = `Unable to read response body: ${e}`;
           }
 
           results.push(`✅ ${endpoint.name}`);

@@ -34,7 +34,7 @@ module.exports = {
       sub.setName("history").setDescription("View your recent dar command history")
     ),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     const subcommand = interaction.options.getSubcommand();
 
     switch (subcommand) {

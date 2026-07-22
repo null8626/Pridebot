@@ -49,7 +49,7 @@ async function formatBioText(text) {
   );
 
   formatted = formatted.replace(
-    /\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g,
+    /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
     "{{MDLINK::$1::$2}}"
   );
 
@@ -121,19 +121,19 @@ async function formatBioText(text) {
 
   // Convert spoiler placeholders
   formatted = formatted.replace(
-    /\{\{SPOILER::([^\}]+)\}\}/g,
+    /\{\{SPOILER::([^}]+)\}\}/g,
     '<span class="spoiler" onclick="this.classList.toggle(\'revealed\')">$1</span>'
   );
 
   // Convert markdown link placeholders to actual links
   formatted = formatted.replace(
-    /\{\{MDLINK::([^:]+)::(https?:\/\/[^\}]+)\}\}/g,
+    /\{\{MDLINK::([^:]+)::(https?:\/\/[^}]+)\}\}/g,
     '<a href="$2" target="_blank" rel="noopener noreferrer" class="bio-link">$1</a>'
   );
 
   // Auto-linked URLs
   formatted = formatted.replace(
-    /\{\{LINK:(https?:\/\/[^\}]+)\}\}/g,
+    /\{\{LINK:(https?:\/\/[^}]+)\}\}/g,
     '<a href="$1" target="_blank" rel="noopener noreferrer" class="bio-link">$1</a>'
   );
 
@@ -160,7 +160,6 @@ document.addEventListener("DOMContentLoaded", async function () {
 async function loadProfile(searchedValue) {
   const loadingContainer = document.getElementById("loading-container");
   const profileContent = document.getElementById("profile-content");
-  const errorState = document.getElementById("error-state");
 
   try {
     const response = await fetch(`${API_BASE_URL}/profile/${searchedValue}`);

@@ -265,8 +265,7 @@ class AvatarProcessor {
     avatarURL,
     flagName,
     flagName2,
-    userID,
-    username = null
+    userID
   ) {
     // Ensure processor is initialized
     if (!this.initialized) {

@@ -193,7 +193,7 @@ async function updateStatsCache(client) {
     const totalUserCount = results.reduce((acc, r) => acc + r.userCount, 0);
 
     const ping = client.ws.ping;
-    const UserInstallCount = await getApproximateUserInstallCount(client);
+    const UserInstallCount = await getApproximateUserInstallCount();
     const usages = await CommandUsage.find({}).sort({ count: -1 });
     const totalUsage = usages.reduce((acc, cmd) => acc + cmd.count, 0);
     const totalGuildCount = usages.reduce(
@@ -1041,7 +1041,7 @@ module.exports = (client) => {
   );
 
   // Global error handler (must be last)
-  app.use((err, req, res, next) => {
+  app.use((err, req, res) => {
     console.error("[API] Unhandled error:", err);
     res.status(500).json({
       error: "Internal Server Error",
