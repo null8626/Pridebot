@@ -90,13 +90,13 @@ async function formatBioText(text) {
 
   const users = await Promise.all(userPromises);
 
-  users.forEach(({ userId, username }) => {
+  for (const { userId, username } of users) {
     const mentionPattern = new RegExp(`&lt;@${userId}&gt;`, "g");
     formatted = formatted.replace(
       mentionPattern,
       `<a href="https://discord.com/users/${userId}" target="_blank" rel="noopener noreferrer" class="user-mention">@${username}</a>`
     );
-  });
+  }
 
   // Bold text
   formatted = formatted.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
@@ -288,7 +288,7 @@ async function populateProfile(profile, discordUser, userId, userBadges, command
 
   if (profile.badgesVisible !== false && userBadges.length > 0) {
     const badgesEl = document.getElementById("profile-badges");
-    userBadges.forEach((badgeKey) => {
+    for (const badgeKey of userBadges) {
       if (badgeImages[badgeKey]) {
         const badgeImg = document.createElement("img");
         badgeImg.src = badgeImages[badgeKey].url;
@@ -297,7 +297,7 @@ async function populateProfile(profile, discordUser, userId, userBadges, command
         badgeImg.className = "profile-badge";
         badgesEl.appendChild(badgeImg);
       }
-    });
+    }
   }
 
   if (profile.bio) {
@@ -359,7 +359,7 @@ async function populateProfile(profile, discordUser, userId, userBadges, command
     const avatarsSection = document.getElementById("avatars-section");
     const avatarsGrid = document.getElementById("custom-avatars");
 
-    profile.customAvatars.forEach((avatar) => {
+    for (const avatar of profile.customAvatars) {
       const avatarCard = document.createElement("div");
       avatarCard.className = "avatar-card";
       avatarCard.innerHTML = `
@@ -370,7 +370,7 @@ async function populateProfile(profile, discordUser, userId, userBadges, command
         window.open(avatar.url, "_blank");
       });
       avatarsGrid.appendChild(avatarCard);
-    });
+    }
 
     avatarsSection.style.display = "block";
   }
@@ -390,14 +390,14 @@ async function populateProfile(profile, discordUser, userId, userBadges, command
   }
 
   if (profile.customWebsites && profile.customWebsites.length > 0) {
-    profile.customWebsites.forEach((site) => {
+    for (const site of profile.customWebsites) {
       const link = createLinkButton(
         site.label,
         site.url,
         "fa-external-link-alt"
       );
       linksGrid.appendChild(link);
-    });
+    }
     hasLinks = true;
   }
 

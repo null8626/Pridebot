@@ -297,10 +297,13 @@ Timestamp: ${new Date().toISOString()}
   function setupFormatFilters() {
     const formatButtons = document.querySelectorAll(".format-btn");
 
-    formatButtons.forEach((button) => {
+    for (const button of formatButtons) {
       button.addEventListener("click", () => {
         // Update active state
-        formatButtons.forEach((btn) => btn.classList.remove("active"));
+        for (const btn of formatButtons) {
+          btn.classList.remove("active");
+        }
+
         button.classList.add("active");
 
         // Update current format and filter
@@ -309,7 +312,7 @@ Timestamp: ${new Date().toISOString()}
         currentPage = 1; // Reset to first page
         renderPage(currentPage);
       });
-    });
+    }
   }
 
   function filterAvatars() {
@@ -345,11 +348,11 @@ Timestamp: ${new Date().toISOString()}
     }
 
     // Render avatar cards
-    currentAvatars.forEach((file, index) => {
-      const card = createAvatarCard(file, imagePathBase, currentFormat);
+    for (let index = 0; index < currentAvatars.length; index++) {
+      const card = createAvatarCard(currentAvatars[index], imagePathBase, currentFormat);
       card.style.animationDelay = `${index * 0.1}s`;
       galleryContainer.appendChild(card);
-    });
+    }
 
     paginationContainer.style.display = "flex";
     renderPagination();

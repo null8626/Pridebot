@@ -189,12 +189,7 @@ module.exports = (client) => {
         "pronounpage",
       ];
 
-      const filteredUpdates = {};
-      allowedFields.forEach((field) => {
-        if (updates[field] !== undefined) {
-          filteredUpdates[field] = updates[field];
-        }
-      });
+      const filteredUpdates = Object.fromEntries(allowedFields.filter(field => updates[field]).map(field => [field, updates[field]]));
 
       if (
         filteredUpdates.age &&
