@@ -37,10 +37,18 @@ module.exports = {
   async execute(interaction, client) {
     const subcommand = interaction.options.getSubcommand();
 
-    if (subcommand === "manage") {
-      await handleManage(interaction);
-    } else if (subcommand === "history") {
-      await handleHistory(interaction);
+    switch (subcommand) {
+      case "manage": {
+        await handleManage(interaction);
+
+        break;
+      }
+
+      case "history": {
+        await handleHistory(interaction);
+
+        break;
+      }
     }
   },
 };

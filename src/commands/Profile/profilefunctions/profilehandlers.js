@@ -251,46 +251,48 @@ async function handlePremium(interaction, client) {
     await Profile.findOneAndUpdate({ userId }, { $set: updates });
   }
 
-  if (action === "add") {
-    const lastSite = profile.customWebsites.slice(-1)[0] || {};
-    const labelPh = lastSite.label || "e.g. My Blog";
-    const urlPh = lastSite.url || "https://example.com";
-    const modal = new ModalBuilder()
-      .setCustomId("customWebsiteModal")
-      .setTitle("Add Custom Website");
-    modal.addComponents(
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId("websiteLabel")
-          .setLabel("Button Label")
-          .setStyle(TextInputStyle.Short)
-          .setPlaceholder(labelPh)
-          .setRequired(true)
-      ),
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId("websiteUrl")
-          .setLabel("Website URL")
-          .setStyle(TextInputStyle.Short)
-          .setPlaceholder(urlPh)
-          .setRequired(true)
-      )
-    );
-    return interaction.showModal(modal);
-  }
-
-  if (action === "remove") {
-    const sites = profile.customWebsites || [];
-    if (sites.length === 0) {
-      return interaction.reply({ content: "No websites to remove.", ephemeral: true });
+  switch (action) {
+    case "add": {
+      const lastSite = profile.customWebsites.slice(-1)[0] || {};
+      const labelPh = lastSite.label || "e.g. My Blog";
+      const urlPh = lastSite.url || "https://example.com";
+      const modal = new ModalBuilder()
+        .setCustomId("customWebsiteModal")
+        .setTitle("Add Custom Website");
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("websiteLabel")
+            .setLabel("Button Label")
+            .setStyle(TextInputStyle.Short)
+            .setPlaceholder(labelPh)
+            .setRequired(true)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("websiteUrl")
+            .setLabel("Website URL")
+            .setStyle(TextInputStyle.Short)
+            .setPlaceholder(urlPh)
+            .setRequired(true)
+        )
+      );
+      return interaction.showModal(modal);
     }
-    const options = sites.map((ws) => ({ label: ws.label, value: ws.url }));
-    const menu = new StringSelectMenuBuilder()
-      .setCustomId("removeWebsiteSelect")
-      .setPlaceholder("Select a website to remove")
-      .addOptions(options);
-    const row = new ActionRowBuilder().addComponents(menu);
-    return interaction.reply({ content: "Choose a website to remove:", components: [row], ephemeral: true });
+
+    case "remove": {
+      const sites = profile.customWebsites || [];
+      if (sites.length === 0) {
+        return interaction.reply({ content: "No websites to remove.", ephemeral: true });
+      }
+      const options = sites.map((ws) => ({ label: ws.label, value: ws.url }));
+      const menu = new StringSelectMenuBuilder()
+        .setCustomId("removeWebsiteSelect")
+        .setPlaceholder("Select a website to remove")
+        .addOptions(options);
+      const row = new ActionRowBuilder().addComponents(menu);
+      return interaction.reply({ content: "Choose a website to remove:", components: [row], ephemeral: true });
+    }
   }
 
   if (messages.length > 0) {
