@@ -548,8 +548,7 @@ function isValidPronounPageLink(link) {
 }
 
 async function ageCheck(interaction, age, cmd) {
-  if (age === 0) return true;
-  if (age !== null && (age < 13 || age > 99)) {
+  if (age !== null && age !== 0 && (age < 13 || age > 99)) {
     const embed = new EmbedBuilder()
       .setColor("#FF0000")
       .setTitle("🚨 Illegal Age")
