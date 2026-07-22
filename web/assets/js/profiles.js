@@ -312,13 +312,13 @@ async function populateProfile(profile, discordUser, userId, userBadges, command
     document.getElementById("profile-age").textContent = profile.age;
     ageCard.style.display = "flex";
   }
-  
+
   if (commandUsage && commandUsage.totalCommands > 0) {
     const commandsCard = document.getElementById("commands-card");
     document.getElementById("profile-commands").textContent = commandUsage.totalCommands.toLocaleString();
     commandsCard.style.display = "flex";
   }
-  
+
   if (profile.sexuality) {
     const sexualityCard = document.getElementById("sexuality-card");
     let sexualityText = profile.sexuality;

@@ -211,17 +211,17 @@ Timestamp: ${new Date().toISOString()}
       { url: `/getUser/${userId}`, name: `Current User Info (${userId})` },
       { url: '/health', name: 'Health Check' }
     ];
-    
+
     try {
       console.log('Running comprehensive API diagnostics...');
       results.push(`🔍 API Diagnostics for ${window.location.host}`);
       results.push(`📅 ${new Date().toLocaleString()}`);
       results.push('');
-      
+
       for (const endpoint of testEndpoints) {
         try {
           console.log(`Testing ${endpoint.name}: ${endpoint.url}`);
-          
+
           const startTime = Date.now();
           const response = await fetch(endpoint.url, {
             headers: { 
@@ -231,10 +231,10 @@ Timestamp: ${new Date().toISOString()}
             signal: AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined // 5 second timeout
           });
           const responseTime = Date.now() - startTime;
-          
+
           const contentType = response.headers.get('content-type');
           let responsePreview = '';
-          
+
           try {
             const text = await response.text();
             if (text.startsWith('{') || text.startsWith('[')) {
@@ -251,28 +251,28 @@ Timestamp: ${new Date().toISOString()}
           } catch (e) {
             responsePreview = 'Unable to read response body';
           }
-          
+
           results.push(`✅ ${endpoint.name}`);
           results.push(`   Status: ${response.status} ${response.statusText}`);
           results.push(`   Response Time: ${responseTime}ms`);
           results.push(`   Content-Type: ${contentType || 'Not specified'}`);
           results.push(`   Response: ${responsePreview}`);
           results.push('');
-          
+
         } catch (error) {
           results.push(`❌ ${endpoint.name}`);
           results.push(`   Error: ${error.name}: ${error.message}`);
           results.push('');
         }
       }
-      
+
     } catch (error) {
       results.push(`💥 Diagnostic Error: ${error.message}`);
     }
-    
+
     const resultText = results.join('\n');
     console.log('API Test Results:', resultText);
-    
+
     // Show results in console and alert
     alert("API Test Results:\n\n" + resultText);
   };

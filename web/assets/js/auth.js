@@ -149,7 +149,7 @@ function configureDiscordAuth() {
 
 function verifyUserToken(req, res, next) {
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No token provided' });
   }
@@ -166,7 +166,6 @@ function verifyUserToken(req, res, next) {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 }
-
 
 function generateToken(userId, username) {
   return jwt.sign(
