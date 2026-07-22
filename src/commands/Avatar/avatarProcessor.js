@@ -7,6 +7,8 @@ const { Timeout } = require("../../utils/timeout");
 
 // Cache configurations
 const flagCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 }); // 1 hour cache, check every 10 minutes
+const avatarCache = new NodeCache({ stdTTL: 600, checkperiod: 120 }); // 10 minute cache, check every 2 minutes
+const processedAvatarCache = new NodeCache({ stdTTL: 1800, checkperiod: 300 }); // 30 minute cache for final results
 
 // Background processing queue (with fallback if Redis is not available)
 let avatarQueue;
