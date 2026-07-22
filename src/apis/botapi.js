@@ -75,13 +75,7 @@ setInterval(() => {
 }, RATE_LIMIT_WINDOW);
 
 function validateWebhookAuth(authHeader, platform) {
-  if (platform === "botlist" && authHeader !== config.botlistauth) {
-    return false;
-  }
-  if (platform === "discords" && authHeader !== config.discordsauth) {
-    return false;
-  }
-  return true;
+  return (platform === "botlist" && authHeader === config.botlistauth) || (platform === "discords" && authHeader === config.discordsauth);
 }
 
 async function sendEmbedToChannel(client, embed, channelId, context = "Vote") {
