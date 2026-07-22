@@ -18,7 +18,7 @@ async function updateDiscordsCount(client) {
           Authorization: discordstoken,
           "Content-Type": "application/json",
         },
-        data: JSON.stringify({ server_count: totalGuilds })
+        body: JSON.stringify({ server_count: totalGuilds })
       }
     );
   } catch (error) {
