@@ -44,7 +44,7 @@ async function handleDisplay(interaction, client) {
 
   if (colorInput) {
     const color = colorInput.startsWith("#") ? colorInput : `#${colorInput}`;
-    if (!/^#([0-9A-F]{3,6})$/i.test(color)) {
+    if (!/^#([\dA-F]{3,6})$/i.test(color)) {
       return interaction.reply({
         content: "Please enter a valid hex code for the color.",
         ephemeral: true,
