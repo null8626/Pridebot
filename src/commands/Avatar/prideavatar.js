@@ -112,7 +112,7 @@ module.exports = {
         return;
       }
 
-      const fileName = `${flagName}${flagName2 ? flagName2 : ""}.png`;
+      const fileName = `${flagName}${flagName2 ?? ""}.png`;
       const timestamp = Date.now();
       const imageURL = `https://pfp.pridebot.xyz/${pfpuser.id}/${fileName}`;
       const imageURLWithTime = `${imageURL}?time=${timestamp}`;
