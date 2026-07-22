@@ -120,7 +120,6 @@ module.exports = {
   passport,
 };
 
-const passport = require('passport');
 const DiscordStrategy = require('passport-discord').Strategy;
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
